@@ -86,10 +86,10 @@ jobs:
         with:
           name: build-${{ matrix.os }}-${{ matrix.arch || 'x86_64' }}
           path: |
-            ./build/*.AppImage  # Linux
-            ./build/*.exe        # Windows
-            ./build/*.dmg        # macOS
-            ./build/*.pkg        # macOS alternative installer
+            ${{ matrix.os == 'ubuntu-latest' && './build/*.AppImage' || '' }}
+            ${{ matrix.os == 'windows-latest' && './build/*.exe' || '' }}
+            ${{ matrix.os == 'macos-14' && './build/*.dmg' || '' }}
+            ${{ matrix.os == 'macos-14' && './build/*.pkg' || '' }}
         if: always() # Adjust this path based on where your compiled binaries are stored
 
   flatpak:
