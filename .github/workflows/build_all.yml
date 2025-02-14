@@ -87,9 +87,9 @@ jobs:
 
       # Add step to build AppImage in non-FUSE mode
       - name: Create AppImage in non-FUSE mode
-        if: contains(matrix.os, 'ubuntu') && matrix.arch == 'x86_64'
+        if: contains(matrix.os, 'ubuntu') && matrix.arch == 'aarch64'
         run: |
-          ARCH=x86_64 appimagetool --no-appimage AppDir OrcaSlicer-${{ env.ver }}-x86_64.AppImage
+          ARCH=aarch64 appimagetool --no-appimage AppDir OrcaSlicer-${{ env.ver }}-aarch64.AppImage
         env:
           ver: ${{ env.ver }}
 
@@ -97,12 +97,12 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.os }}-${{ matrix.arch || 'x86_64' }}
+          name: build-${{ matrix.os }}-${{ matrix.arch || 'aarch64' }}
           path: ./build/ # Adjust this path based on where your compiled binaries are stored
           
           # Upload the generated AppImage as well
           name: AppImage-${{ matrix.os }}-${{ matrix.arch }}
-          path: OrcaSlicer-${{ env.ver }}-x86_64.AppImage
+          path: OrcaSlicer-${{ env.ver }}-aarch64.AppImage
 
   flatpak:
     name: "Flatpak"
