@@ -85,7 +85,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.os }}-${{ matrix.arch || 'x86_64' }}
-          path: ./build/ # Adjust this path based on where your compiled binaries are stored
+          path: ./build/*.AppImage # Adjust this path based on where your compiled binaries are stored
 
   flatpak:
     name: "Flatpak"
