@@ -39,7 +39,7 @@ jobs:
       - uses: lukka/get-cmake@latest
         with:
           cmakeVersion: "~3.28.0"  # use most recent 3.28.x version
-          
+
       - name: Get the version and date on Ubuntu and macOS
         if: inputs.os != 'windows-latest'
         run: |
@@ -77,7 +77,7 @@ jobs:
           echo "date: ${{ env.date }} version: ${{ env.ver }}"
         shell: pwsh
 
-#   Mac
+# Mac
       - name: Install tools mac
         if: inputs.os == 'macos-14'
         run: |
@@ -100,7 +100,6 @@ jobs:
         run: |
           ./build_release_macos.sh -s -n -x -a ${{inputs.arch}} -t 10.15 -1
 
- # Thanks to RaySajuuk, it's working now
       - name: Sign app and notary
         if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && inputs.os == 'macos-14'
         working-directory: ${{ github.workspace }}
@@ -150,7 +149,7 @@ jobs:
           asset_path: ${{ github.workspace }}/OrcaSlicer_Mac_${{inputs.arch}}_${{ env.ver }}.dmg
           asset_name: OrcaSlicer_Mac_${{inputs.arch}}_${{ env.ver }}.dmg
           asset_content_type: application/octet-stream
-          max_releases: 1 # optional, if there are more releases than this matching the asset_name, the oldest ones are going to be deleted
+          max_releases: 1
 
 # Windows
       - name: setup MSVC
@@ -175,15 +174,15 @@ jobs:
         if: inputs.os == 'windows-latest'
         working-directory: ${{ github.workspace }}
         run: |
-          mkdir -p ${{ github.workspace }}/build_${{inputs.arch}}/OrcaSlicer
-          .\scripts\package_for_windows.bat
-
-      - name: Upload artifacts Win
+          .\build_release.bat
+          zip -r OrcaSlicer_Win_${{ inputs.arch }}_${{ env.ver }}.zip .\build_${{ inputs.arch }}\OrcaSlicer\OrcaSlicer.exe
+          
+      - name: Upload Windows artifacts
         if: inputs.os == 'windows-latest'
         uses: actions/upload-artifact@v4
         with:
-          name: OrcaSlicer_Windows_${{inputs.arch}}_${{ env.ver }}
-          path: ${{ github.workspace }}/build_${{inputs.arch}}/OrcaSlicer/OrcaSlicerInstaller.exe
+          name: OrcaSlicer_Win_${{ inputs.arch }}_${{ env.ver }}
+          path: ${{ github.workspace }}/OrcaSlicer_Win_${{ inputs.arch }}_${{ env.ver }}.zip
 
       - name: Deploy Windows release
         if: github.ref == 'refs/heads/main' && inputs.os == 'windows-latest'
@@ -191,43 +190,91 @@ jobs:
         with:
           upload_url: https://uploads.github.com/repos/SoftFever/OrcaSlicer/releases/137995723/assets{?name,label}
           release_id: 137995723
-          asset_path: ${{ github.workspace }}/build_${{inputs.arch}}/OrcaSlicer/OrcaSlicerInstaller.exe
-          asset_name: OrcaSlicer_Windows_${{inputs.arch}}_${{ env.ver }}.exe
-          asset_content_type: application/octet-stream
-          max_releases: 1 # optional, if there are more releases than this matching the asset_name, the oldest ones are going to be deleted
+          asset_path: ${{ github.workspace }}/OrcaSlicer_Win_${{ inputs.arch }}_${{ env.ver }}.zip
+          asset_name: OrcaSlicer_Win_${{ inputs.arch }}_${{ env.ver }}.zip
+          asset_content_type: application/zip
+          max_releases: 1
 
-# Ubuntu
-      - name: Install dependencies for Ubuntu
-        if: inputs.os == 'ubuntu-24.04-arm'
+# Ubuntu 20.04
+      - name: Install dependencies Ubuntu 20.04
+        if: inputs.os == 'ubuntu-20.04'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential cmake ninja-build git wget libtool libpng-dev libjpeg-dev libtiff-dev libpango1.0-dev libgl1-mesa-dev libxcb1-dev libxml2-dev
+          sudo apt update
+          sudo apt install -y build-essential cmake libssl-dev libz-dev libpng-dev libjpeg-dev \
+              libboost-all-dev libsqlite3-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools \
+              qtdeclarative5-dev libglib2.0-dev libgtest-dev pkg-config libcurl4-openssl-dev
+          sudo apt install -y ninja-build
 
-      - name: Build OrcaSlicer for Ubuntu
-        if: inputs.os == 'ubuntu-24.04-arm'
+      - name: Build OrcaSlicer Ubuntu 20.04
+        if: inputs.os == 'ubuntu-20.04'
+        working-directory: ${{ github.workspace }}
         run: |
-          mkdir -p ${{ github.workspace }}/build_${{inputs.arch}}/OrcaSlicer
-          cd ${{ github.workspace }}
-          mkdir build
+          mkdir -p build
           cd build
           cmake ..
           make -j$(nproc)
-          make install
 
-      - name: Upload artifacts for Ubuntu
-        if: inputs.os == 'ubuntu-24.04-arm'
+      - name: Package Ubuntu 20.04
+        if: inputs.os == 'ubuntu-20.04'
+        run: |
+          tar czvf OrcaSlicer_Ubuntu_20_04_${{ inputs.arch }}_${{ env.ver }}.tar.gz -C build OrcaSlicer
+
+      - name: Upload Ubuntu 20.04 artifacts
+        if: inputs.os == 'ubuntu-20.04'
         uses: actions/upload-artifact@v4
         with:
-          name: OrcaSlicer_Ubuntu_${{inputs.arch}}_${{ env.ver }}
-          path: ${{ github.workspace }}/build_${{inputs.arch}}/OrcaSlicer/OrcaSlicer
+          name: OrcaSlicer_Ubuntu_20_04_${{ inputs.arch }}_${{ env.ver }}
+          path: ${{ github.workspace }}/OrcaSlicer_Ubuntu_20_04_${{ inputs.arch }}_${{ env.ver }}.tar.gz
 
-      - name: Deploy Ubuntu release
-        if: github.ref == 'refs/heads/main' && inputs.os == 'ubuntu-24.04-arm'
+      - name: Deploy Ubuntu 20.04 release
+        if: github.ref == 'refs/heads/main' && inputs.os == 'ubuntu-20.04'
         uses: WebFreak001/deploy-nightly@v3.2.0
         with:
           upload_url: https://uploads.github.com/repos/SoftFever/OrcaSlicer/releases/137995723/assets{?name,label}
           release_id: 137995723
-          asset_path: ${{ github.workspace }}/build_${{inputs.arch}}/OrcaSlicer/OrcaSlicer
-          asset_name: OrcaSlicer_Ubuntu_${{inputs.arch}}_${{ env.ver }}
-          asset_content_type: application/octet-stream
-          max_releases: 1 # optional, if there are more releases than this matching the asset_name, the oldest ones are going to be deleted
+          asset_path: ${{ github.workspace }}/OrcaSlicer_Ubuntu_20_04_${{ inputs.arch }}_${{ env.ver }}.tar.gz
+          asset_name: OrcaSlicer_Ubuntu_20_04_${{ inputs.arch }}_${{ env.ver }}.tar.gz
+          asset_content_type: application/gzip
+          max_releases: 1
+
+# Ubuntu 24.04
+      - name: Install dependencies Ubuntu 24.04
+        if: inputs.os == 'ubuntu-24.04'
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake libssl-dev libz-dev libpng-dev libjpeg-dev \
+              libboost-all-dev libsqlite3-dev qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools \
+              qtdeclarative5-dev libglib2.0-dev libgtest-dev pkg-config libcurl4-openssl-dev
+          sudo apt install -y ninja-build
+
+      - name: Build OrcaSlicer Ubuntu 24.04
+        if: inputs.os == 'ubuntu-24.04'
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make -j$(nproc)
+
+      - name: Package Ubuntu 24.04
+        if: inputs.os == 'ubuntu-24.04'
+        run: |
+          tar czvf OrcaSlicer_Ubuntu_24_04_${{ inputs.arch }}_${{ env.ver }}.tar.gz -C build OrcaSlicer
+
+      - name: Upload Ubuntu 24.04 artifacts
+        if: inputs.os == 'ubuntu-24.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrcaSlicer_Ubuntu_24_04_${{ inputs.arch }}_${{ env.ver }}
+          path: ${{ github.workspace }}/OrcaSlicer_Ubuntu_24_04_${{ inputs.arch }}_${{ env.ver }}.tar.gz
+
+      - name: Deploy Ubuntu 24.04 release
+        if: github.ref == 'refs/heads/main' && inputs.os == 'ubuntu-24.04'
+        uses: WebFreak001/deploy-nightly@v3.2.0
+        with:
+          upload_url: https://uploads.github.com/repos/SoftFever/OrcaSlicer/releases/137995723/assets{?name,label}
+          release_id: 137995723
+          asset_path: ${{ github.workspace }}/OrcaSlicer_Ubuntu_24_04_${{ inputs.arch }}_${{ env.ver }}.tar.gz
+          asset_name: OrcaSlicer_Ubuntu_24_04_${{ inputs.arch }}_${{ env.ver }}.tar.gz
+          asset_content_type: application/gzip
+          max_releases: 1
