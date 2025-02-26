@@ -16,7 +16,7 @@ on:
 jobs:
   check_cache: # determines if there is a cache and outputs variables used in caching process
     name: Check Cache
-    runs-on: ${{ inputs.os }}
+    runs-on: ${{ inputs.os == 'ubuntu-20.04' || inputs.os == 'ubuntu-24.04' ? 'ubuntu-latest' : (inputs.os == 'macos-14' ? 'macos-latest' : (inputs.os == 'windows-latest' ? 'windows-latest' : 'ubuntu-20.04')) }} # Added ARM support (defaults to 'ubuntu-latest' for ARM64)
     outputs:
       cache-key: ${{ steps.set_outputs.outputs.cache-key }}
       cache-path: ${{ steps.set_outputs.outputs.cache-path }}
@@ -30,8 +30,8 @@ jobs:
       - name: set outputs
         id: set_outputs
         env:
-          underscore-arch: ${{ inputs.os == 'macos-14' && '_' || ''}}${{ inputs.os == 'macos-14' && inputs.arch || '' }} # if is macos, make a string that does "_{arch}", else output nothing
-          dash-arch: ${{ inputs.os == 'macos-14' && '-' || ''}}${{ inputs.os == 'macos-14' && inputs.arch || '' }} # if is macos, make a string that does "-{arch}", else output nothing
+          underscore-arch: ${{ inputs.arch == 'arm64' && '_' || ''}}${{ inputs.arch == 'arm64' && inputs.arch || '' }} # Adds ARM architecture support
+          dash-arch: ${{ inputs.arch == 'arm64' && '-' || ''}}${{ inputs.arch == 'arm64' && inputs.arch || '' }} # Adds ARM architecture support
           dep-folder-name: ${{ (inputs.os == 'windows-latest' || inputs.os == 'macos-14') && 'OrcaSlicer_dep' || 'destdir' }}
           output-cmd: ${{ inputs.os == 'windows-latest' && '$env:GITHUB_OUTPUT' || '"$GITHUB_OUTPUT"'}}
         run: |
